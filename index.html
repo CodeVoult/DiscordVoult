@@ -61,9 +61,9 @@
     <div>
       <div class="channels-header">DiscordVoult</div>
       <ul class="channel-list" id="channel-list">
-        <li class="channel-item active" onclick="cambiarCanal('general')"># general</li>
-        <li class="channel-item" onclick="cambiarCanal('desarrollo')"># desarrollo</li>
-        <li class="channel-item" onclick="cambiarCanal('off-topic')"># off-topic</li>
+        <li class="channel-item active" onclick="cambiarCanal('general', event)"># general</li>
+        <li class="channel-item" onclick="cambiarCanal('desarrollo', event)"># desarrollo</li>
+        <li class="channel-item" onclick="cambiarCanal('off-topic', event)"># off-topic</li>
       </ul>
     </div>
     
@@ -117,7 +117,7 @@
       }
     }
 
-    // Funciones Base64 compatibles con UTF-8 (Emojis y tildes)
+    // Funciones Base64 compatibles con UTF-8
     function utf8_to_b64(str) {
       return window.btoa(unescape(encodeURIComponent(str)));
     }
@@ -158,7 +158,6 @@
             `;
           });
           
-          // Solo hacer scroll automático si el usuario ya estaba al fondo
           if (isAtBottom) {
             box.scrollTop = box.scrollHeight;
           }
@@ -168,7 +167,6 @@
       }
     }
 
-    // Seguridad básica anti-XSS para texto plano
     function escapeHtml(text) {
       return text
         .replace(/&/g, "&amp;")
@@ -178,18 +176,20 @@
         .replace(/'/g, "&#039;");
     }
 
-    function cambiarCanal(canal) {
+    function cambiarCanal(canal, event) {
       canalActual = canal;
       document.getElementById('current-channel-title').innerText = '#' + canal;
       document.getElementById('message-input').placeholder = `Enviar mensaje a #${canal}...`;
       
       document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
-      event.target.classList.add('active');
+      if (event && event.target) {
+        event.target.classList.add('active');
+      }
       
       cargarMensajes();
     }
 
-    // Enviar mensaje con actualización simultánea de SHA y reintentos automáticos
+    // Enviar mensaje
     document.getElementById('chat-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       
@@ -200,10 +200,10 @@
 
       let usuario = obtenerUsuario();
       btn.disabled = true;
-      btn.innerText = "...";
+      btn.innerText = "Enviando...";
 
       try {
-        // 1. Obtener la versión más reciente del archivo database.json y su SHA actual
+        // 1. Obtener el archivo actual y su SHA
         let getRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${REPO_NAME}/contents/database.json?cache=${Date.now()}`, {
           headers: {
             'Authorization': `token ${GITHUB_TOKEN}`,
@@ -211,11 +211,16 @@
           }
         });
 
+        if (!getRes.ok) {
+          alert("Error: No se encontró el archivo database.json en el repositorio.");
+          return;
+        }
+
         let fileData = await getRes.json();
         let currentSha = fileData.sha;
         let dbData = JSON.parse(b64_to_utf8(fileData.content));
 
-        // 2. Modificar la estructura de datos localmente
+        // 2. Modificar datos
         if (!dbData.channels) dbData.channels = {};
         if (!dbData.channels[canalActual]) dbData.channels[canalActual] = [];
 
@@ -226,7 +231,7 @@
           time: horaActual
         });
 
-        // 3. Enviar el commit vía PUT a la API de GitHub
+        // 3. Enviar a GitHub mediante PUT
         let putRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${REPO_NAME}/contents/database.json`, {
           method: 'PUT',
           headers: {
@@ -247,11 +252,13 @@
           let box = document.getElementById('messages-box');
           box.scrollTop = box.scrollHeight;
         } else {
-          alert("Conflicto de sincronización. Intenta enviar el mensaje de nuevo en unos segundos.");
+          let errorData = await putRes.json();
+          alert("Error de GitHub: " + (errorData.message || "No se pudo guardar."));
         }
 
       } catch (err) {
         console.error("Error al enviar mensaje:", err);
+        alert("Ocurrió un error en la conexión.");
       } finally {
         btn.disabled = false;
         btn.innerText = "Enviar";
@@ -261,8 +268,6 @@
     // Inicializar aplicación
     obtenerUsuario();
     cargarMensajes();
-    
-    // Polling: Actualizar mensajes cada 4 segundos de forma automática
     setInterval(cargarMensajes, 4000);
   </script>
 </body>
