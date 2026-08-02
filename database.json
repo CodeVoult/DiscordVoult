@@ -1,10 +1,7 @@
 {
   "channels": {
-    "general": [
-      { "user": "Sistema", "text": "¡Bienvenido al chat de Discord en GitHub!", "time": "2026-08-02" }
-    ],
-    "desarrollo": [
-      { "user": "Sistema", "text": "Canal para hablar de código.", "time": "2026-08-02" }
-    ]
+    "general": [],
+    "desarrollo": [],
+    "off-topic": []
   }
 }
