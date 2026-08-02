@@ -8,19 +8,16 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     body { display: flex; height: 100vh; background-color: #313338; color: #dbdee1; overflow: hidden; }
     
-    /* Barra de servidores */
     .servers { width: 72px; background-color: #1e1f22; display: flex; flex-direction: column; align-items: center; padding-top: 12px; gap: 8px; }
     .server-icon { width: 48px; height: 48px; background-color: #5865f2; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; cursor: pointer; transition: 0.2s; }
     .server-icon:hover { border-radius: 16px; background-color: #4752c4; }
 
-    /* Barra de canales */
     .channels { width: 240px; background-color: #2b2d31; display: flex; flex-direction: column; }
     .channels-header { padding: 16px; font-weight: bold; border-bottom: 1px solid #1f2023; color: white; }
     .channel-list { padding: 8px; list-style: none; }
     .channel-item { padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-bottom: 2px; color: #949ba4; }
     .channel-item:hover, .channel-item.active { background-color: #35373c; color: white; }
 
-    /* Área principal de chat */
     .chat-container { flex: 1; display: flex; flex-direction: column; background-color: #313338; }
     .chat-header { padding: 16px; border-bottom: 1px solid #1f2023; font-weight: bold; color: white; background-color: #313338; }
     .messages-box { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
@@ -28,23 +25,21 @@
     .message .author { font-weight: bold; color: #f2f3f5; font-size: 0.95rem; }
     .message .text { color: #dbdee1; font-size: 0.9rem; margin-top: 2px; }
     
-    /* Input de mensajes */
     .chat-input-area { padding: 16px; }
     .chat-form { display: flex; background-color: #383a40; border-radius: 8px; padding: 10px 16px; gap: 10px; }
     .chat-input { flex: 1; background: transparent; border: none; color: white; outline: none; font-size: 0.95rem; }
     .chat-input::placeholder { color: #87899c; }
     .send-btn { background-color: #5865f2; color: white; border: none; padding: 6px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
     .send-btn:hover { background-color: #4752c4; }
+    .send-btn:disabled { background-color: #4e5058; cursor: not-allowed; }
   </style>
 </head>
 <body>
 
-  <!-- 1. Servidores -->
   <aside class="servers">
     <div class="server-icon" title="Servidor Principal">DC</div>
   </aside>
 
-  <!-- 2. Canales -->
   <aside class="channels">
     <div class="channels-header">Mi Servidor</div>
     <ul class="channel-list" id="channel-list">
@@ -53,38 +48,57 @@
     </ul>
   </aside>
 
-  <!-- 3. Chat -->
   <main class="chat-container">
     <div class="chat-header" id="current-channel-title"># general</div>
     
-    <div class="messages-box" id="messages-box">
-      <!-- Los mensajes se cargarán aquí dinámicamente -->
-    </div>
+    <div class="messages-box" id="messages-box"></div>
 
     <div class="chat-input-area">
       <form class="chat-form" id="chat-form">
-        <input type="text" id="message-input" class="chat-input" placeholder="Enviar mensaje a #general..." required autocomplete="off">
-        <button type="submit" class="send-btn">Enviar</button>
+        <input type="text" id="message-input" class="chat-input" placeholder="Enviar mensaje..." required autocomplete="off">
+        <button type="submit" id="btn-submit" class="send-btn">Enviar</button>
       </form>
     </div>
   </main>
 
   <script>
-    let canalActual = 'general';
-    const GITHUB_USER = 'TU_USUARIO_GITHUB';
-    const REPO_NAME = 'NOMBRE_DE_TU_REPO';
+    // --- REEMPLAZA ESTOS DATOS CON LOS TUYOS ---
+    const GITHUB_USER = 'CodeVoult';
+    const REPO_NAME = 'DiscordVoult';
+    const GITHUB_TOKEN = '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'; // Tu Personal Access Token (PAT)
     
-    // Función para leer los mensajes del archivo database.json en GitHub
+    let canalActual = 'general';
+
+    // Función para codificar texto a Base64 manteniendo caracteres especiales (UTF-8)
+    function utf8_to_b64(str) {
+      return window.btoa(unescape(encodeURIComponent(str)));
+    }
+
+    // Función para decodificar de Base64 a UTF-8
+    function b64_to_utf8(str) {
+      return decodeURIComponent(escape(window.atob(str)));
+    }
+
+    // 1. Leer mensajes desde la API de GitHub
     async function cargarMensajes() {
       try {
-        let respuesta = await fetch(`https://raw.githubusercontent.com/${GITHUB_USER}/${REPO_NAME}/main/database.json?cache=${Date.now()}`);
-        let data = await respuesta.json();
+        let res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${REPO_NAME}/contents/database.json?cache=${Date.now()}`, {
+          headers: {
+            'Authorization': `token ${GITHUB_TOKEN}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+
+        if (!res.ok) return;
+
+        let fileData = await res.json();
+        let contentJson = JSON.parse(b64_to_utf8(fileData.content));
         
         let box = document.getElementById('messages-box');
         box.innerHTML = '';
         
-        if(data.channels && data.channels[canalActual]) {
-          data.channels[canalActual].forEach(msg => {
+        if (contentJson.channels && contentJson.channels[canalActual]) {
+          contentJson.channels[canalActual].forEach(msg => {
             box.innerHTML += `
               <div class="message">
                 <span class="author">${msg.user} <span style="font-size:0.75rem; color:#949ba4;">${msg.time || ''}</span></span>
@@ -95,7 +109,7 @@
           box.scrollTop = box.scrollHeight;
         }
       } catch (e) {
-        console.error("Error cargando base de datos:", e);
+        console.error("Error al cargar la base de datos:", e);
       }
     }
 
@@ -104,29 +118,92 @@
       document.getElementById('current-channel-title').innerText = '#' + canal;
       document.getElementById('message-input').placeholder = `Enviar mensaje a #${canal}...`;
       
-      // Cambiar clases visuales
       document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
       event.target.classList.add('active');
       
       cargarMensajes();
     }
 
-    // Enviar mensaje utilizando la API de GitHub (Requiere un token personal o proxy si es público sin autenticar)
+    // 2. Escribir mensaje en la base de datos (database.json) usando la API de GitHub
     document.getElementById('chat-form').addEventListener('submit', async (e) => {
       e.preventDefault();
-      let input = document.getElementById('message-input');
-      let texto = input.value.trim();
-      if(!texto) return;
-
-      let usuario = prompt("¿Cuál es tu nombre de usuario para el chat?") || "Invitado";
       
-      alert("Para guardar el mensaje directamente en la base de datos de GitHub de forma segura para todos los usuarios, el proyecto requiere conectar un Token de GitHub en el script. ¡Revisa el paso 4 para finalizar la conexión multiusuario!");
-      input.value = '';
+      let input = document.getElementById('message-input');
+      let btn = document.getElementById('btn-submit');
+      let texto = input.value.trim();
+      if (!texto) return;
+
+      let usuario = localStorage.getItem('chat_username');
+      if (!usuario) {
+        usuario = prompt("Escribe tu nombre de usuario para el chat:") || "Anonimo";
+        localStorage.setItem('chat_username', usuario);
+      }
+
+      btn.disabled = true;
+      btn.innerText = "Enviando...";
+
+      try {
+        // Obtener el archivo actual y su SHA
+        let getRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${REPO_NAME}/contents/database.json`, {
+          headers: {
+            'Authorization': `token ${GITHUB_TOKEN}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+
+        let fileData = await getRes.json();
+        let currentSha = fileData.sha;
+        let dbData = JSON.parse(b64_to_utf8(fileData.content));
+
+        // Asegurar que el canal existe
+        if (!dbData.channels) dbData.channels = {};
+        if (!dbData.channels[canalActual]) dbData.channels[canalActual] = [];
+
+        // Agregar el nuevo mensaje
+        let horaActual = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        dbData.channels[canalActual].push({
+          user: usuario,
+          text: texto,
+          time: horaActual
+        });
+
+        // Convertir de nuevo a Base64
+        let updatedContentB64 = utf8_to_b64(JSON.stringify(dbData, null, 2));
+
+        // Hacer la petición PUT a la API de GitHub para guardar los datos
+        let putRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${REPO_NAME}/contents/database.json`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `token ${GITHUB_TOKEN}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/vnd.github.v3+json'
+          },
+          body: JSON.stringify({
+            message: `Nuevo mensaje de ${usuario} en #${canalActual}`,
+            content: updatedContentB64,
+            sha: currentSha
+          })
+        });
+
+        if (putRes.ok) {
+          input.value = '';
+          cargarMensajes();
+        } else {
+          alert("Error al guardar el mensaje. Revisa los permisos de tu token.");
+        }
+
+      } catch (err) {
+        console.error("Error al enviar mensaje:", err);
+        alert("Ocurrió un fallo de conexión.");
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Enviar";
+      }
     });
 
-    // Cargar mensajes al iniciar y actualizar cada 5 segundos
+    // Cargar la vista inicial y refrescar cada 4 segundos
     cargarMensajes();
-    setInterval(cargarMensajes, 5000);
+    setInterval(cargarMensajes, 4000);
   </script>
 </body>
 </html>
