@@ -2,61 +2,174 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Discord Web - GitHub DB</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Discord Web Mobile</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body { display: flex; height: 100vh; background-color: #313338; color: #dbdee1; overflow: hidden; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
     
+    /* Adaptado a la altura dinámica real de móviles (100dvh) */
+    html, body { 
+      height: 100%; 
+      height: 100dvh; 
+      width: 100vw; 
+      background-color: #313338; 
+      color: #dbdee1; 
+      overflow: hidden; 
+    }
+
+    body { display: flex; flex-direction: row; }
+
     /* Servidores */
-    .servers { width: 72px; background-color: #1e1f22; display: flex; flex-direction: column; align-items: center; padding-top: 12px; gap: 8px; }
-    .server-icon { width: 48px; height: 48px; background-color: #5865f2; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; cursor: pointer; transition: 0.2s; }
-    .server-icon:hover { border-radius: 16px; background-color: #4752c4; }
+    .servers { 
+      width: 60px; 
+      background-color: #1e1f22; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      padding-top: 10px; 
+      gap: 8px; 
+      flex-shrink: 0; 
+    }
+    .server-icon { 
+      width: 42px; 
+      height: 42px; 
+      background-color: #5865f2; 
+      border-radius: 50%; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      color: white; 
+      font-weight: bold; 
+      font-size: 0.9rem;
+    }
 
     /* Canales */
-    .channels { width: 240px; background-color: #2b2d31; display: flex; flex-direction: column; justify-content: space-between; }
-    .channels-header { padding: 16px; font-weight: bold; border-bottom: 1px solid #1f2023; color: white; display: flex; justify-content: space-between; align-items: center; }
-    .channel-list { padding: 8px; list-style: none; overflow-y: auto; flex: 1; }
-    .channel-item { padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-bottom: 2px; color: #949ba4; transition: 0.15s; }
-    .channel-item:hover, .channel-item.active { background-color: #35373c; color: white; }
+    .channels { 
+      width: 130px; 
+      background-color: #2b2d31; 
+      display: flex; 
+      flex-direction: column; 
+      justify-content: space-between; 
+      flex-shrink: 0; 
+    }
+    .channels-header { 
+      padding: 12px 8px; 
+      font-weight: bold; 
+      font-size: 0.9rem; 
+      border-bottom: 1px solid #1f2023; 
+      color: white; 
+      white-space: nowrap; 
+      overflow: hidden; 
+      text-overflow: ellipsis; 
+    }
+    .channel-list { padding: 6px 4px; list-style: none; overflow-y: auto; flex: 1; }
+    .channel-item { 
+      padding: 6px 8px; 
+      border-radius: 4px; 
+      cursor: pointer; 
+      margin-bottom: 2px; 
+      color: #949ba4; 
+      font-size: 0.85rem; 
+      white-space: nowrap; 
+      overflow: hidden; 
+      text-overflow: ellipsis; 
+    }
+    .channel-item.active { background-color: #35373c; color: white; }
 
-    /* Perfil inferior en barra de canales */
-    .user-profile { padding: 12px; background-color: #232428; display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem; }
-    .user-info { display: flex; flex-direction: column; overflow: hidden; }
-    .user-name { font-weight: bold; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .user-status { color: #23a55a; font-size: 0.75rem; }
-    .edit-user-btn { background: transparent; border: none; color: #b5bac1; cursor: pointer; font-size: 1rem; padding: 4px; }
-    .edit-user-btn:hover { color: white; }
+    .user-profile { 
+      padding: 8px; 
+      background-color: #232428; 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+    }
+    .user-name { font-weight: bold; color: white; font-size: 0.75rem; max-width: 85px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .edit-user-btn { background: transparent; border: none; color: #b5bac1; cursor: pointer; font-size: 0.9rem; }
 
-    /* Chat Area */
-    .chat-container { flex: 1; display: flex; flex-direction: column; background-color: #313338; }
-    .chat-header { padding: 16px; border-bottom: 1px solid #1f2023; font-weight: bold; color: white; background-color: #313338; display: flex; align-items: center; gap: 8px; }
+    /* Contenedor principal del Chat */
+    .chat-container { 
+      flex: 1; 
+      display: flex; 
+      flex-direction: column; 
+      background-color: #313338; 
+      height: 100%; 
+      min-width: 0; 
+    }
     
-    .messages-box { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; scroll-behavior: smooth; }
+    .chat-header { 
+      height: 48px; 
+      padding: 0 12px; 
+      border-bottom: 1px solid #1f2023; 
+      font-weight: bold; 
+      color: white; 
+      display: flex; 
+      align-items: center; 
+      flex-shrink: 0; 
+      font-size: 0.95rem; 
+    }
+    
+    /* Mensajes */
+    .messages-box { 
+      flex: 1; 
+      padding: 12px; 
+      overflow-y: auto; 
+      display: flex; 
+      flex-direction: column; 
+      gap: 12px; 
+      scroll-behavior: smooth; 
+    }
     .message { display: flex; flex-direction: column; word-break: break-word; }
-    .message .author-line { display: flex; align-items: baseline; gap: 8px; }
-    .message .author { font-weight: 600; color: #f2f3f5; font-size: 0.95rem; }
-    .message .time { font-size: 0.75rem; color: #949ba4; }
-    .message .text { color: #dbdee1; font-size: 0.92rem; margin-top: 2px; line-height: 1.375rem; white-space: pre-wrap; }
+    .message .author-line { display: flex; align-items: baseline; gap: 6px; }
+    .message .author { font-weight: 600; color: #f2f3f5; font-size: 0.88rem; }
+    .message .time { font-size: 0.7rem; color: #949ba4; }
+    .message .text { color: #dbdee1; font-size: 0.85rem; margin-top: 2px; line-height: 1.25rem; white-space: pre-wrap; }
     
-    /* Input Area */
-    .chat-input-area { padding: 0 16px 24px 16px; }
-    .chat-form { display: flex; background-color: #383a40; border-radius: 8px; padding: 10px 16px; gap: 10px; align-items: center; }
-    .chat-input { flex: 1; background: transparent; border: none; color: white; outline: none; font-size: 0.95rem; }
+    /* ÁREA DEL INPUT SIEMPRE VISIBLE ABAJO */
+    .chat-input-area { 
+      padding: 8px; 
+      background-color: #313338; 
+      flex-shrink: 0; 
+    }
+    .chat-form { 
+      display: flex; 
+      background-color: #383a40; 
+      border-radius: 8px; 
+      padding: 6px 10px; 
+      gap: 6px; 
+      align-items: center; 
+    }
+    .chat-input { 
+      flex: 1; 
+      background: transparent; 
+      border: none; 
+      color: white; 
+      outline: none; 
+      font-size: 0.9rem; 
+      min-width: 0; 
+    }
     .chat-input::placeholder { color: #87899c; }
-    .send-btn { background-color: #5865f2; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: background 0.2s; }
-    .send-btn:hover { background-color: #4752c4; }
-    .send-btn:disabled { background-color: #4e5058; cursor: not-allowed; }
+    .send-btn { 
+      background-color: #5865f2; 
+      color: white; 
+      border: none; 
+      padding: 6px 12px; 
+      border-radius: 4px; 
+      cursor: pointer; 
+      font-weight: bold; 
+      font-size: 0.8rem; 
+      flex-shrink: 0; 
+    }
+    .send-btn:disabled { background-color: #4e5058; }
   </style>
 </head>
 <body>
 
-  <!-- 1. Servidores -->
+  <!-- Servidores -->
   <aside class="servers">
-    <div class="server-icon" title="DiscordVoult Server">DV</div>
+    <div class="server-icon">DV</div>
   </aside>
 
-  <!-- 2. Canales y Perfil -->
+  <!-- Canales -->
   <aside class="channels">
     <div>
       <div class="channels-header">DiscordVoult</div>
@@ -67,17 +180,13 @@
       </ul>
     </div>
     
-    <!-- Tarjeta de usuario inferior -->
     <div class="user-profile">
-      <div class="user-info">
-        <span class="user-name" id="display-username">Cargando...</span>
-        <span class="user-status">● En línea</span>
-      </div>
-      <button class="edit-user-btn" onclick="cambiarNombreUsuario()" title="Cambiar nombre de usuario">⚙️</button>
+      <span class="user-name" id="display-username">Cargando...</span>
+      <button class="edit-user-btn" onclick="cambiarNombreUsuario()" title="Cambiar usuario">⚙️</button>
     </div>
   </aside>
 
-  <!-- 3. Chat Principal -->
+  <!-- Chat -->
   <main class="chat-container">
     <div class="chat-header" id="current-channel-title"># general</div>
     
@@ -85,7 +194,7 @@
 
     <div class="chat-input-area">
       <form class="chat-form" id="chat-form">
-        <input type="text" id="message-input" class="chat-input" placeholder="Enviar mensaje a #general..." required autocomplete="off">
+        <input type="text" id="message-input" class="chat-input" placeholder="Enviar mensaje..." required autocomplete="off">
         <button type="submit" id="btn-submit" class="send-btn">Enviar</button>
       </form>
     </div>
@@ -98,11 +207,10 @@
     
     let canalActual = 'general';
 
-    // Manejo de nombre de usuario local
     function obtenerUsuario() {
       let usuario = localStorage.getItem('chat_username');
       if (!usuario) {
-        usuario = prompt("Elige tu nombre de usuario para el chat:") || "Invitado_" + Math.floor(Math.random() * 1000);
+        usuario = prompt("Escribe tu nombre de usuario para el chat:") || "User_" + Math.floor(Math.random() * 1000);
         localStorage.setItem('chat_username', usuario);
       }
       document.getElementById('display-username').innerText = usuario;
@@ -117,15 +225,9 @@
       }
     }
 
-    // Funciones Base64 compatibles con UTF-8
-    function utf8_to_b64(str) {
-      return window.btoa(unescape(encodeURIComponent(str)));
-    }
-    function b64_to_utf8(str) {
-      return decodeURIComponent(escape(window.atob(str)));
-    }
+    function utf8_to_b64(str) { return window.btoa(unescape(encodeURIComponent(str))); }
+    function b64_to_utf8(str) { return decodeURIComponent(escape(window.atob(str))); }
 
-    // Cargar mensajes de GitHub
     async function cargarMensajes() {
       try {
         let res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${REPO_NAME}/contents/database.json?cache=${Date.now()}`, {
@@ -141,7 +243,7 @@
         let contentJson = JSON.parse(b64_to_utf8(fileData.content));
         
         let box = document.getElementById('messages-box');
-        let isAtBottom = box.scrollHeight - box.scrollTop <= box.clientHeight + 80;
+        let isAtBottom = box.scrollHeight - box.scrollTop <= box.clientHeight + 60;
         
         box.innerHTML = '';
         
@@ -163,33 +265,25 @@
           }
         }
       } catch (e) {
-        console.error("Error al sincronizar con GitHub:", e);
+        console.error("Error al cargar:", e);
       }
     }
 
     function escapeHtml(text) {
-      return text
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+      return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
 
     function cambiarCanal(canal, event) {
       canalActual = canal;
       document.getElementById('current-channel-title').innerText = '#' + canal;
-      document.getElementById('message-input').placeholder = `Enviar mensaje a #${canal}...`;
+      document.getElementById('message-input').placeholder = `Enviar a #${canal}...`;
       
       document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
-      if (event && event.target) {
-        event.target.classList.add('active');
-      }
+      if (event && event.target) event.target.classList.add('active');
       
       cargarMensajes();
     }
 
-    // Enviar mensaje
     document.getElementById('chat-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       
@@ -200,10 +294,9 @@
 
       let usuario = obtenerUsuario();
       btn.disabled = true;
-      btn.innerText = "Enviando...";
+      btn.innerText = "...";
 
       try {
-        // 1. Obtener el archivo actual y su SHA
         let getRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${REPO_NAME}/contents/database.json?cache=${Date.now()}`, {
           headers: {
             'Authorization': `token ${GITHUB_TOKEN}`,
@@ -212,7 +305,7 @@
         });
 
         if (!getRes.ok) {
-          alert("Error: No se encontró el archivo database.json en el repositorio.");
+          alert("Error: Asegúrate de tener el archivo database.json en GitHub.");
           return;
         }
 
@@ -220,7 +313,6 @@
         let currentSha = fileData.sha;
         let dbData = JSON.parse(b64_to_utf8(fileData.content));
 
-        // 2. Modificar datos
         if (!dbData.channels) dbData.channels = {};
         if (!dbData.channels[canalActual]) dbData.channels[canalActual] = [];
 
@@ -231,7 +323,6 @@
           time: horaActual
         });
 
-        // 3. Enviar a GitHub mediante PUT
         let putRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${REPO_NAME}/contents/database.json`, {
           method: 'PUT',
           headers: {
@@ -240,7 +331,7 @@
             'Accept': 'application/vnd.github.v3+json'
           },
           body: JSON.stringify({
-            message: `💬 [${canalActual}] Mensaje de ${usuario}`,
+            message: `💬 Mensaje de ${usuario}`,
             content: utf8_to_b64(JSON.stringify(dbData, null, 2)),
             sha: currentSha
           })
@@ -252,20 +343,17 @@
           let box = document.getElementById('messages-box');
           box.scrollTop = box.scrollHeight;
         } else {
-          let errorData = await putRes.json();
-          alert("Error de GitHub: " + (errorData.message || "No se pudo guardar."));
+          alert("Error al enviar. Intenta de nuevo.");
         }
 
       } catch (err) {
-        console.error("Error al enviar mensaje:", err);
-        alert("Ocurrió un error en la conexión.");
+        console.error("Error al enviar:", err);
       } finally {
         btn.disabled = false;
         btn.innerText = "Enviar";
       }
     });
 
-    // Inicializar aplicación
     obtenerUsuario();
     cargarMensajes();
     setInterval(cargarMensajes, 4000);
